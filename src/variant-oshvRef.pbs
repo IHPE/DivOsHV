@@ -1,0 +1,453 @@
+#!/usr/bin/env bash
+#PBS -q omp
+#PBS -l ncpus=12
+#PBS -l mem=128gb
+#PBS -l walltime=5:00:00
+
+## DESCRIPTION ##
+# Variant calling on OsHV-1 µVar A
+
+## USAGE ##
+# qsub -v "reads1=*R1.fastq.gz,reads2=*R2.fastq.gz,id=AF11-I-T48-R1,genomefile=OsHV-1_strain_microVar_variant_A.fasta,gffFile=oshv-1A-corr.gff3" ~/variant-oshvRef.pbs
+
+## Activation des environnement ##
+#Chargement de conda
+export PATH=$PATH:/appli/anaconda/2.7/bin # risque de changé avec /appli/anaconda/latest
+#Chargement de l'environnement avec les outils
+source activate $DATAWORK/mon-env-bioinfo
+
+## Execute script ##
+
+cd $SCRATCH/2020-01-29_VC_Annotated_genome_DiVir/ # be sure to creat repo before run script
+
+basefile=$(basename $reads1 .fastq.gz)
+basefileReads2=$(basename $reads2 .fastq.gz)
+ID=$(basename $id)
+fileReads=${ID}_tot_reads.txt
+readsTrim1=${basefile}_trim.fastq.gz
+readsTrim2=${basefileReads2}_trim.fastq.gz
+logfile=${basefile}_log.txt
+bamfile=${basefile}_aligned.bam
+sortbamfile=${bamfile%.bam}_sortBAM.bam
+vcffile=${sortbamfile%.bam}.vcf
+#genomefile=$DATAWORK/data_jean/OsHV-1_strain_microVar_variant_A.fasta
+alnPysamstats=${ID}_aln_PysamStat_var.txt
+
+# Ajout pour les htseqcount
+countfile=${ID}_count.csv
+#gffFile=$DATAWORK/data_jean/oshv-1A-corr.gff3
+
+# Created output directory
+if [ ! -d "${ID}_Variant_calling" ];
+then
+    mkdir ${ID}_Variant_calling
+    cd ${ID}_Variant_calling
+    echo -e "\n Creating ${ID}_Variant_calling...\n" > $logfile
+else
+    cd ${ID}_Variant_calling
+    echo -e "\n The directory ${ID}_Variant_calling already exist $(date +%Y-%m-%d_%Hh%Mm%Ss) ...\n" >> $logfile
+fi
+
+echo -e "Commande : $0 " >> $logfile
+echo -e "Start at  : $(date +%Y-%m-%d_%Hh%Mm%Ss) " >> $logfile
+echo -e "\nID manip : $id " >> $logfile
+echo -e "basefile : $basefile " >> $logfile
+echo -e "reads are : $reads1 ${reads2}" >> $logfile
+echo -e "logfile : $logfile " >> $logfile
+echo -e "bamfile : $bamfile " >> $logfile
+echo -e "vcffile : $vcffile " >> $logfile
+echo -e "genomefile : $genomefile " >> $logfile
+echo -e "pysamstats file : ${basefile}_aln_PysamStat_var.txt " >> $logfile
+
+# Adaptater trimming
+if [ ! -f ${readsTrim1} ]
+then
+    # Run FastQC on the resulting datasets.
+    if [ $reads2 == "" ]
+        then
+            echo -e "\n Trimming ${reads1}..." >> $logfile
+            trimmomatic PE -phred33 -threads $NCPUS ${reads1} \
+            ${reads2} \
+            ${readsTrim1} \
+            $(basename $reads1 .fastq.gz)_1unpaired.fastq.gz \
+            ILLUMINACLIP:/home1/datahome/jdelmott/all_adapter.fa:2:30:10 \
+            LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:50
+            echo -e "Reads trim in : ${reads1%.fastq.gz}_trim.fastq.gz \n " >> $logfile
+        else
+            echo -e "\nTrimming ${reads1} and ${reads2}..." >> $logfile
+            trimmomatic PE -phred33 -threads $NCPUS \
+            ${reads1} \
+            ${reads2} \
+            ${readsTrim1} \
+            $(basename $reads1 .fastq.gz)_1unpaired.fastq.gz \
+            ${readsTrim2} \
+            $(basename $reads2 .fastq.gz)_2unpaired.fastq.gz \
+            ILLUMINACLIP:/home/datawork-hemovir/raw/data/all_adapter.fa:2:30:10 \
+            LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:50
+            echo -e "Reads1 trim in : ${readsTrim1} \n " >> $logfile
+            echo -e "Reads2 trim in : ${readsTrim2} \n " >> $logfile
+    fi
+else
+    echo -e "\nSkipped Adapter trimming" >> $logfile
+fi
+
+# Reads quality control
+if [ ! -f ${readsTrim1%.fastq.gz}_fastqc.html ]
+then
+    # Run FastQC on the trimming reads
+    if [ $reads2 == "" ]
+        then
+            echo -e "\nSecond quality controle on ${readsTrim1} (single ends)... \n" >> $logfile
+            fastqc ${readsTrim1}
+    else
+            echo -e "\nQuality controle on ${readsTrim1} and ${readsTrim2} (paired ends)... \n" >> $logfile
+            fastqc ${readsTrim1} ${readsTrim2}
+    fi
+else
+    echo -e "\nSkipped Second read quality control" >> $logfile
+fi
+
+# Aligning reads with genome OsHV1 µVar A using bowtie2
+if [ ! -f ${bamfile} ] && [ ! -f ${sortbamfile} ] && [ ! -f ${sortbamfile%.bam}_rm-dupl.bam ]
+then
+    # Create bowtie2 index from genome file.
+    if [ ! -f ${genomefile}.1.bt2 ]
+    then
+        echo -e '\n Building genome index... \n'
+        bowtie2-build --quiet $genomefile  $genomefile
+    fi
+
+    if [ "$reads2" == "" ]
+    then
+        echo -e '\nAligning single reads with genome... \n'
+        bowtie2 --quiet -p $NCPUS -x $genomefile -U $readsTrim1 | \
+            samtools view -b > $bamfile 2>>${logfile}
+        samtools flagstat $bamfile >> ${logfile}
+    else
+        echo -e '\nAligning paired reads with genome...\n'
+        bowtie2 --quiet -p $NCPUS -x $genomefile \
+        -1 ${readsTrim1} \
+        -2 ${readsTrim2} | \
+        samtools view -b > $bamfile 2>>${logfile}
+        echo -e '\n# Statistique after aligning on OsHV-1 µVar A genome...\n' \
+        >>${logfile}
+        samtools flagstat $bamfile >> ${logfile}
+    fi
+else
+    echo -e "\nSkipped alignment" >> $logfile
+fi
+
+# filtring and Sorting mapping quality
+if [ ! -f ${sortbamfile} ] && [ ! -f ${sortbamfile%.bam}_rm-dupl.bam ]
+    then
+        echo -e "\nFiltre all reads with mapping quality below 20" >> $logfile
+        samtools view -bq 20 -m 20 ${bamfile} > ${bamfile%.bam}_q_20.bam \
+        2>>${logfile}
+        echo -e "\nSorting ${bamfile} ...\n" >> $logfile
+        samtools sort -T ${bamfile%.bam}_q_20.bam \
+        -o ${sortbamfile} ${bamfile%.bam}_q_20.bam \
+        2>>${logfile}
+        if [ ! -f ${sortbamfile}.bai ]
+            then
+                echo -e "\nCreating index of ${sortbamfile} ...\n" >> $logfile
+                samtools index -b ${sortbamfile} 2>> ${logfile}
+        else
+            echo -e "\nSkipped indexing" >> $logfile
+        fi
+        echo -e "\nFLAGSTAT after mapQ " >> $logfile
+        samtools flagstat $sortbamfile >> $logfile
+else
+    echo -e "\nGenerated bam with mapping quality 20 already done" >> $logfile
+fi
+
+## remove duplicate | Waring syntax old version !
+#if [ ! -f ${sortbamfile%.bam}_rm-dupl.bam ]
+#    then
+#        echo -e "\nRemoving duplicat ${sortbamfile%.bam}_rm-duplicat.bam ...\n" \
+#        >> $logfile
+#        /home1/datawork/jdelmott/mon-env-bioinfo/bin/java -Xms512m -Xmx50g -jar \
+#        /home1/datawork/jdelmott/mon-env-bioinfo/share/picard-2.18.14-0/picard.jar \
+#         MarkDuplicates \
+#         "I=${sortbamfile}" \
+#         "O=${sortbamfile%.bam}_rm-dupl.bam" \
+#         "M=${sortbamfile%.bam}_MD_metrics.txt" \
+#         "VALIDATION_STRINGENCY=LENIENT" \
+#         "REMOVE_DUPLICATES=true" \
+#          2>> ${logfile}
+#        samtools sort -T ${sortbamfile%.bam}_rm-dupl.bam \
+#        -o ${sortbamfile%.bam}_rm-dupl.bam \
+#        ${sortbamfile%.bam}_rm-dupl.bam
+#        samtools index -b ${sortbamfile%.bam}_rm-dupl.bam 2>> ${logfile}
+#else
+#    echo -e "\nSkipped Removing duplicat" >> $logfile
+#fi
+
+# remove duplicate | Waring syntax old version !
+if [ ! -f ${sortbamfile%.bam}_rm-dupl.bam ]
+    then
+        echo -e "\nRemoving duplicat ${sortbamfile%.bam}_rm-duplicat.bam ...\n" \
+        >> $logfile
+        /home1/datawork/jdelmott/mon-env-bioinfo/bin/java -Xms512m -Xmx50g -jar \
+        /home1/datawork/jdelmott/mon-env-bioinfo/share/picard-2.18.14-0/picard.jar \
+         MarkDuplicates \
+         "I=${sortbamfile}" \
+         "O=${sortbamfile%.bam}_rm-dupl.bam" \
+         "M=${sortbamfile%.bam}_MD_metrics.txt" \
+         "VALIDATION_STRINGENCY=LENIENT" \
+         "REMOVE_DUPLICATES=true" \
+          2>> ${logfile}
+        samtools sort -T ${sortbamfile%.bam}_rm-dupl.bam \
+        -o ${sortbamfile%.bam}_rm-dupl.bam \
+        ${sortbamfile%.bam}_rm-dupl.bam
+        samtools index -b ${sortbamfile%.bam}_rm-dupl.bam 2>> ${logfile}
+else
+    echo -e "\nSkipped Removing duplicat" >> $logfile
+fi
+
+MarkDuplicates \
+-I ${sortbamfile} \
+-O ${sortbamfile%.bam}_rm-dupl.bam \
+-M ${sortbamfile%.bam}_MD_metrics.txt \
+-VALIDATION_STRINGENCY LENIENT \
+-REMOVE_DUPLICATES true
+
+/home1/datawork/jdelmott/mon-env-bioinfo/bin/java -Xms512m -Xmx50g -jar \
+        /home1/datawork/jdelmott/mon-env-bioinfo/share/picard-2.18.14-0/picard.jar \
+         MarkDuplicates \
+        I="WGS_num-10_Thau-Inf-F32c_S13_mRNA_paired_R1_aligned_sortBAM.bam" \
+        O="WGS_num-10_Thau-Inf-F32c_S13_mRNA_paired_R1_aligned_sortBAM_rm-dupl.bam" \
+        REMOVE_DUPLICATES=true
+
+
+# Stat on the raw count of reads
+if [ ! -f ${fileReads} ]
+    then
+      echo -e "\nCounting reads after Remove duplcates...\n" \
+      >> $logfile
+      # ID
+      # total number of alignments on library
+      # reads non align
+      # reads align on virus
+      # alignments that are not unmapped after QC
+      echo -e ${ID} "\t" \
+      `samtools view -c $bamfile` \
+      "\t" \
+      `samtools view -c -f4 $bamfile` \
+      "\t" \
+      `samtools view -c -F4 $bamfile` \
+      "\t" \
+      `samtools view -c -F4 ${sortbamfile%.bam}_rm-dupl.bam` \
+      > ${fileReads} 2>> ${logfile}
+else
+    echo -e "\nNumber of Reads already display" >> $logqfile
+fi
+
+# raw count of variants
+if [ ! -f ${alnPysamstats} ]
+    then
+        echo -e "\nFind variation in bamfile ${alnPysamstats} ...\n" >> $logfile
+        pysamstats -f $genomefile -t variation ${sortbamfile%.bam}_rm-dupl.bam \
+        --fields=chrom,pos,ref,matches,mismatches,A,C,G,T > ${alnPysamstats} \
+        2>> ${logfile}
+else
+    echo -e "\nRaw count using pysamstats" >> $logfile
+fi
+
+# Count reads on ORFs using HTSeq-count
+if [ ! -f ${countfile} ]
+    then
+        echo -e "\nStarted ORFs counting of ${sortbamfile%.bam} ...\n" >> $logfile
+        htseq-count -q -r name -f bam -s reverse -t CDS \
+        --nonunique all -i product ${sortbamfile%.bam}_rm-dupl.bam $gffFile \
+        > $countfile 2>> $logfile
+else
+    echo -e "\n${countfile} already exist ..." >> $logfile
+fi
+
+## Variant calling Samtools (old)
+#if [ ! -f ${vcffile} ]
+#    then
+#        echo -e "\nStarted SNP calling of ${sortbamfile} ...\n" >> $logfile
+#        samtools mpileup -ABQ0 -d8000 -uf $genomefile ${sortbamfile%.bam}_rm-dupl.bam \
+#        | bcftools call -vm --threads $NCPUS --ploidy 1 -o $vcffile # The -m option is use for set all infividuals as haploid
+## Trying the -A option to display all the polymorphismes
+#else
+#    echo -e "\n${vcffile} already exist ..." >> $logfile
+#fi
+
+# Variant calling
+if [ ! -f ${vcffile%.vcf}_cQR.vcf.gz.tbi ] && [ ! -f ${ID}_ann.vcf ]
+    then
+    freebayes -f ${genomefile} --use-mapping-quality --min-repeat-entropy 1 \
+    --gvcf --haplotype-length 0 --min-alternate-count 5 --pooled-continuous \
+    --hwe-priors-off --allele-balance-priors-off \
+    -b ${sortbamfile%.bam}_rm-dupl.bam > ${vcffile}
+    2>> $logfile
+    # Change to allow norma etc otherwise it's bug
+    sed 's/=QR,Number=1,Type=Integer/=QR,Number=1,Type=Float/' ${vcffile} \
+    > ${vcffile%.vcf}_cQR.vcf
+    echo -e "\nChanging QR Type=Integer by Type=Float " >> $logfile
+    # compressions VCF
+    if [ ! -f ${vcffile%.vcf}_cQR.vcf.gz ]
+        then
+            echo -e "\n ${vcffile%.vcf}_cQR.vcf compress ...\n" >> $logfile
+            bgzip -c ${vcffile%.vcf}_cQR.vcf > ${vcffile%.vcf}_cQR.vcf.gz
+    else
+            echo -e "\n${vcffile%.vcf}_cQR.vcf already compress ..." \
+            >> $logfile
+    fi
+    # indexation VCF
+    if [ ! -f ${vcffile%.vcf}_cQR.vcf.gz.tbi ]
+        then
+            echo -e "\n ${vcffile%.vcf}_cQR.vcf indexed ...\n" >> $logfile
+            tabix -p vcf ${vcffile%.vcf}_cQR.vcf.gz
+    else
+        echo -e "\n${vcffile} already change and index ..." >> $logfile
+    fi
+else
+    echo -e "\n${vcffile} already exist ..." >> $logfile
+fi
+
+## Sort VCF
+#### Problem unsolved : [E::vcf_parse_format] Invalid character '.' in 'QR' FORMAT field at KY242785.1:34 ###
+#if [ ! -f ${vcffile%.vcf}_sorted.vcf.gz ] && [ ! -f ${ID}_ann.vcf ]
+#    then
+#        echo -e "\n ${vcffile} sorted ...\n" >> $logfile
+#        cat ${vcffile}.gz | vcf-sort > ${vcffile%.vcf}_sorted.vcf
+#        bgzip -c ${vcffile%.vcf}_sorted.vcf > ${vcffile%.vcf}_sorted.vcf.gz
+#        tabix -p vcf ${vcffile%.vcf}_sorted.vcf.gz
+#        #rm ${vcffile}.gz
+#else
+#    echo -e "\n${vcffile%.vcf}_sorted.vcf.gz already sorted ..." >> $logfile
+#fi
+
+# first QC
+if [ ! -f ${vcffile%.vcf}.check ]
+    then
+        echo -e "\n ${vcffile%.vcf}.check first QC ...\n" >> $logfile
+        bcftools stats ${vcffile%.vcf}_cQR.vcf.gz > ${vcffile%.vcf}.check
+        echo -e "$(basename $ID)\t $(basename $ID)\t $(basename $ID)\t $(basename $ID)" \
+        > ${vcffile%.vcf.gz}_summary_QC_first.txt
+        grep -e "^SN" ${vcffile%.vcf}.check >> ${vcffile%.vcf.gz}_summary_QC_first.txt
+        echo -e "\n - Use paste command for concat all first_QC files - " >> $logfile
+    else
+        echo -e "\n${vcffile} already first QC ..." >> $logfile
+fi
+
+# normalisation VCF
+if [ ! -f ${vcffile%.vcf}_cQR_norma.vcf ] && [ ! -f ${ID}_ann.vcf ]
+    then
+        echo -e "\n ${vcffile%.vcf}_sorted.vcf.gz normalize ...\n" >> $logfile
+        bcftools norm -f $genomefile \
+        ${vcffile%.vcf}_cQR.vcf.gz -O v > ${vcffile%.vcf}_cQR_norma.vcf \
+        2>> $logfile
+else
+    echo -e "\n${vcffile} already normalised ..." >> $logfile
+fi
+
+# decomplexe biallelic block substitutions and write out to decomposed_blocksub.vcf
+if [ ! -f ${vcffile%.vcf}_cQR_norma_decomp.vcf ] && [ ! -f ${ID}_ann.vcf ]
+    then
+        echo -e "\n ${vcffile} decomplexe ...\n" >> $logfile
+        vt decompose_blocksub ${vcffile%.vcf}_cQR_norma.vcf \
+        -o ${vcffile%.vcf}_cQR_norma_decomp.vcf \
+        2>> $logfile
+else
+    echo -e "\n${vcffile} already decomplexed ..." >> $logfile
+fi
+
+# Multibreak duplicate to distinguish each effect (many effect within line)
+if [ ! -f ${vcffile%.vcf}_cQR_norma_decomp_multiB.vcf.gz ] && [ ! -f ${ID}_ann.vcf ]
+    then
+        echo -e "\nMultibreak ${vcffile}...\n" >> $logfile
+        vcfbreakmulti ${vcffile%.vcf}_cQR_norma_decomp.vcf \
+        > ${vcffile%.vcf}_cQR_norma_decomp_multiB.vcf \
+        2>> $logfile
+        # Compression and index
+        bgzip -c ${vcffile%.vcf}_cQR_norma_decomp_multiB.vcf \
+        > ${vcffile%.vcf}_cQR_norma_decomp_multiB.vcf.gz
+        tabix -p vcf ${vcffile%.vcf}_cQR_norma_decomp_multiB.vcf.gz
+else
+        echo -e "\n${vcffile} already Multibreak ..." >> $logfile
+fi
+
+## filtred VCF
+#if [ ! -f ${vcffile%.vcf}_norma_filtred.vcf.gz ]
+#    then
+#        echo -e "\n ${vcffile%.vcf}_norma_filtred.vcf.gz sort using %QUAL>20 & MIN(DP)>20 \
+#        & (DP4[0]+DP4[1]+DP4[2]+DP4[3]) > 20 ...\n" >> $logfile
+#        bcftools filter -g10 -G10 -i'%QUAL>20 & MIN(DP)>20 & (DP4[0]+DP4[1]+DP4[2]+DP4[3]) > 20' \
+#        ${vcffile%.vcf}_norma.vcf.gz > ${vcffile%.vcf}_norma_filtred.vcf 2>> ${logfile}
+#        bgzip -c ${vcffile%.vcf}_norma_filtred.vcf > ${vcffile%.vcf}_norma_filtred.vcf.gz
+#        tabix -p vcf ${vcffile%.vcf}_norma_filtred.vcf.gz
+#else
+#    echo -e "\n${vcffile} already filtred ..." >> $logfile
+#fi
+
+## Second QC
+#if [ ! -f ${vcffile%.vcf}_norma_filtred.check ]
+#    then
+#        echo -e "\n ${vcffile%.vcf}_norma_filtred.check ...\n" >> $logfile
+#        bcftools stats ${vcffile%.vcf}_norma_filtred.vcf.gz > ${vcffile%.vcf}_norma_filtred.check
+#        echo -e "$(basename $ID)\t $(basename $ID)\t $(basename $ID)\t $(basename $ID)" \
+#        > ${vcffile%.vcf}_summary_QC_second.txt
+#        grep -e "^SN" ${vcffile%.vcf}_norma_filtred.check >> ${vcffile%.vcf}_summary_QC_second.txt
+#        echo -e "\n - Use paste command for concat all second_QC files - " >> $logfile
+#    else
+#        echo -e "\n${vcffile} already second QC ..." >> $logfile
+#fi
+
+# Annotation of VCF using OsHV1 µVar A genome (gff3 modif)
+if [ ! -f ${ID}_ann.vcf ]
+  then
+    echo -e "\n Annotation of effects ...\n" >> $logfile
+    snpEff -c /home1/datawork/jdelmott/mon-env-bioinfo/share/snpeff-4.3.1t-2/snpEff.config \
+      -v oshv-1A-corr  \
+      -stats ${ID}_SnpEff_summary.html \
+      ${vcffile%.vcf}_cQR_norma_decomp_multiB.vcf.gz \
+      > ${ID}_ann.vcf \
+      2>> $logfile
+    else
+        echo -e "\n${ID}_ann.vcf already generated ..." >> $logfile
+fi
+
+# Extraction of Tables
+if [ ! -f ${basefile}_ann.csv ]
+    then
+        echo -e "\n ${basefile}_ann.csv generated table ...\n" >> $logfile
+        bcftools query -f '%POS\t%REF\t%ALT\t%DP\t[%RO]\t[%AO]\t%TYPE\n' \
+        ${vcffile%.vcf}_cQR_norma_decomp_multiB.vcf.gz \
+        > ${basefile}_ann.csv
+else
+        echo -e "\n${ID}_ann_clean.csv table already generated ..." >> $logfile
+fi
+
+## Extraction of annotation wit SnpSift
+#if [ ! -f ${vcffile%.vcf}_ann_clean.vcf ]
+#  then
+#    echo -e "\n Extraction avec SnpSift...\n" >> $logfile
+#    SnpSift \
+#    extractFields ${vcffile%.vcf}_ann.vcf POS REF ALT "ANN[0].EFFECT" "ANN[*].HGVS" \
+#    > ${vcffile%.vcf}_ann_clean.vcf
+#else
+#fi
+
+## rm file for place
+#echo -e "\nDeleting ${sortbamfile}.bai ${sortbamfile} for space ...\n" \
+#        >> $logfile
+#rm $bamfile ${sortbamfile}.bai ${sortbamfile} ${vcffile%.vcf}_cQR_norma_decomp.vcf \
+#${vcffile%.vcf}_cQR_norma.vcf ${vcffile} ${vcffile%.vcf}_cQR.vcf \
+#${vcffile%.vcf}_cQR.vcf.gz ${vcffile%.vcf}_cQR.vcf.gz.tbi
+
+# Extraction of Tables
+if [ ! -f ${ID}_clean.csv ]
+    then
+        echo -e "\n ${ID}clean.csv with $ID ...\n" >> $logfile
+        while read p ; do
+          echo -e "${p}\t${ID}" >> ${ID}_clean.csv
+        done < ${basefile}_ann.csv
+else
+        echo -e "\n${ID}clean.csv table already generated ..." >> $logfile
+fi
+
+echo -e "\n== Programme Ends at : $(date +%Y-%m-%d_%Hh%Mm%Ss) ==" >> $logfile

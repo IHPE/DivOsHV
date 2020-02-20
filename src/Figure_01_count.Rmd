@@ -1,0 +1,102 @@
+---
+title: "Figure 1 Count analysis"
+author: "Delmotte jean"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: "hide"
+    theme: united
+    highlight: tango
+    number_sections: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r Base_Path}
+base_path <- "~/Project/DivOsHV" # Base location for the folder
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Fonction to install / load package if it's not here
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+ipak(unique(
+  c("data.table", "tidyverse", "ape", "limma", "glue", "kableExtra",
+    "hrbrthemes", "viridis","RColorBrewer", # palette
+     "plotly", "cowplot", "pheatmap") # plot
+  ) )
+```
+
+
+```{r}
+abondance_fig1CD <- data.table::fread(glue::glue("{base_path}/raw/2019-08-05-Fig1_rawCount.csv")) %>% 
+  rename(ID = V1, READS_LIBRARY = V2, READS_NON_ALIGN = V3, READS_ALIGN_VIRUS = V4, QUALITY_READS_ALIGN_VIRUS = V5) %>%
+  as_tibble() %>%
+  mutate(ID=str_replace(ID, "AF", "A-F"), 
+         ID=str_replace(ID, "MF", "M-F")) %>%
+  separate(ID, c("NEI", "FAM", "CONDITIONS", "TIME", "REPLICATS"), sep = "-",  remove = FALSE) %>%
+  mutate_at(vars(NEI, FAM, CONDITIONS, REPLICATS), as.factor) %>%
+  mutate(TIME = str_replace(TIME, "T", "")) %>%
+  mutate(TIME = as.numeric(TIME))
+
+abondance_fig1CD %>%
+  dplyr::filter(CONDITIONS == "I" & TIME > 6 ) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_styling(fixed_thead = T, bootstrap_options = "condensed")
+  
+```
+
+
+Quantification of the viral load was carried out using data from RNA-Seq (270 FASTQ files) mapped against the genome of OsHV-1 µVar A, accession number [KY242785](https://www.ncbi.nlm.nih.gov/nuccore/KY242785.1), [Burioli et al., 2017](https://doi.org/10.1016/j.virol.2017.06.027). The mapping to was carried out using Bowtie2; then they were counted with Samtools. In order to be able to compare the results of the counts obtained for the different banks, a standardization taking into account the sequencing depth was carried out for each bank:
+
+$$Nreads_{i} = {n_{i}} \times \frac{\bar{L}}{L_{i}}$$
+
+- $Nreads_{i}$ the number of reads mapped to the normalized genome
+
+- $n_{i}$ the number of quality reads mapping to the OsHV1 µVar A genome in the sample $i$
+
+- $\bar{L}$ Average number of total reads in each Library (270)
+
+- $L_i$ The number of total reads in the Library $i$
+
+```{r FigCD}
+#Average number of total reads in each Library (270)
+average_tot_lib <- abondance_fig1CD %>%
+  dplyr::filter(CONDITIONS == "I" & TIME > 6 ) %>%
+  dplyr::select(READS_LIBRARY) %>%
+  dplyr::pull() %>%
+  mean()
+
+abondance_fig1CD %>%
+  dplyr::filter(CONDITIONS == "I" & TIME > 6 ) %>%
+  dplyr::mutate(Normalize_Reads = QUALITY_READS_ALIGN_VIRUS * (average_tot_lib/READS_LIBRARY)) %>%
+  dplyr::select(-READS_LIBRARY,
+                -READS_NON_ALIGN, 
+                -READS_ALIGN_VIRUS, 
+                -QUALITY_READS_ALIGN_VIRUS) %>% # the number of reads mapped to the normalized genome
+  dplyr::group_by(NEI,FAM,TIME) %>%
+  dplyr::summarise(Mean_normaReads_mapped = mean(Normalize_Reads),
+                   SD_normaReads_mapped = sd(Normalize_Reads)) %>%
+  ggplot(aes(x = TIME, y = Mean_normaReads_mapped, group = FAM,  color=FAM) ) +
+    geom_line() +
+    scale_y_log10() +
+  facet_grid( ~ NEI) +
+    geom_errorbar(aes(ymin = abs(Mean_normaReads_mapped - SD_normaReads_mapped), 
+                      ymax = abs(Mean_normaReads_mapped + SD_normaReads_mapped),
+                      colour = FAM), 
+                      width=0.1) +
+    ylab("OsHV-1 RNA reads") +
+    xlab("Times") +
+  labs(colour = "Familles : ") + 
+  scale_colour_manual(values = c("Red", "Green", "Purple", "Orange", "Blue")) + 
+  theme_bw()
+```
+

@@ -1,0 +1,412 @@
+---
+title: "Figure 4 and 5: Distinct heterogeneous viral populations within Atl-NEI and Med-NEI"
+author: "Delmotte jean"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: "hide"
+    theme: united
+    highlight: tango
+    number_sections: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r Base_Path}
+base_path <- "~/Project/DivOsHV" # Base location for the folder
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Fonction to install / load package if it's not here
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+ipak(unique(
+  c("data.table", "tidyverse", "ape", "limma", "glue", "kableExtra",
+    "hrbrthemes", "viridis","RColorBrewer", # palette
+     "plotly", "cowplot", "pheatmap") # plot
+  ) )
+```
+
+```{r Variant_calling_function, message=FALSE, warning=FALSE}
+basePath <- base_path
+Variant_calling_pysamstats <- function(fichiers, pourcentage_alternatif, Depth, min_DP_ALT){
+  # AF32 <- Variant_calling_pysamstats(AF32, 3, 180, 10, as.numeric((sd(AF32$DP_ALT) + mean(AF32$DP_ALT))) )
+  fichiers$DP <- c(fichiers$matches+fichiers$mismatches)
+  fichiers$type <- colnames(fichiers[c("A", "C", "G", "T")])[max.col(fichiers[c("A", "C", "G", "T")],
+                                                                     ties.method="first")]
+  fichiers <- data.frame(fichiers, t(apply(fichiers[c("A", "C", "G", "T")], 1, rank, ties.method='min')))
+  fichiers$second_base <- colnames(fichiers[c("A.1",
+                                              "C.1",
+                                              "G.1",
+                                              "T.1")])[apply(fichiers[c("A.1",
+                                                                        "C.1", 
+                                                                        "G.1", 
+                                                                        "T.1")],1,
+                                                             function(x)which(x==sort(x,partial=3)[3])[1])]
+  fichiers$second_base <- gsub("\\.1","",fichiers$second_base)
+  fichiers$ALT <- ifelse(fichiers$ref==fichiers$type, fichiers$second_base, fichiers$type)
+  fichiers$DP_ALT <- 0
+  i <- 1
+  while (i <= nrow(fichiers)) {
+    fichiers[i,c("DP_ALT")] <- fichiers[i,(gsub('"', '', deparse(fichiers$ALT[i]) ))]
+    i <- i+1
+  }
+  fichiers$p_alter <- round(c((fichiers$DP_ALT/fichiers$DP)*100),digits = 1)
+  # Defition d'un viariant
+  writeLines(paste0("Les paramètres "))
+  fichiers$info <- ifelse(fichiers$p_alter > as.numeric(pourcentage_alternatif), 
+       ifelse(fichiers$DP > as.numeric(Depth), 
+              ifelse(fichiers$DP_ALT > as.numeric(min_DP_ALT) ,
+              ifelse(fichiers$DP_ALT>as.numeric((sd(fichiers$DP_ALT) + mean(fichiers$DP_ALT))), "Var", "REF"),
+              "REF"),
+        "REF"), 
+     "REF")
+  fichiers$FORMAT <- paste0("DP=", fichiers$DP,";p_alter=", fichiers$p_alter,"%")
+  return(fichiers)
+}
+
+complete_table_SNPs <- function(fichiers_ap_VC_post_VC, tableau_clean_env) {
+  output <- data.frame()
+  # Add the vector position of all the SNPs from the files env (after annotation)
+  for (i in c(tableau_clean_env$POS)) {
+    output <- rbind(output, fichiers_ap_VC_post_VC[which(fichiers_ap_VC_post_VC$pos==i),])
+  }
+  # Ajout à la fin les différentes positions qui sont spécifique à l'environnement donnée
+  for (i in c(setdiff(fichiers_ap_VC_post_VC[which(fichiers_ap_VC_post_VC$info=="Var"),]$pos, output$pos))) {
+    output <- rbind(output, fichiers_ap_VC_post_VC[which(fichiers_ap_VC_post_VC$pos==i),])
+    output <- output[order(output$pos),]
+  }
+  return(output)
+}
+
+create_vcf <- function(path_file,noms,fichiers){
+  head(fichiers)
+  #fichiers <- fichiers[c(which(fichiers$info == "Var")),]
+  fichiers$ID <- "."
+  fichiers$QUAL <- "."
+  colnames(fichiers) <- toupper(colnames(fichiers))
+  fichiers_freq <- fichiers[c("POS", "P_ALTER", "ALT")] 
+  write.table(fichiers_freq, file = paste0(path_file,noms,".txt"), sep = "\t", quote=FALSE, row.names = FALSE)
+  fichiers <- fichiers[c("CHROM", "POS", "ID", "REF", "ALT","QUAL", "INFO", "FORMAT")]
+  fichiers <- fichiers[order(fichiers$POS),]
+  write.table(fichiers, file = paste0(path_file,noms,".vcf"), sep = "\t", quote=FALSE, row.names = FALSE)
+  return(paste0("Files : ", noms,".vcf & ", noms,".txt have been created"))
+}
+# Usage : create_vcf(paste0(basePath, "output/"),"merge_env_MED", env_MED)
+
+# Pour avoir toujours le même thème : https://rpubs.com/Koundy/71792
+theme_Publication <- function(base_size=14, base_family="helvetica") {
+  library(grid)
+  library(ggthemes)
+  library(grid)
+  library(ggthemes)
+  library(gridExtra)
+      (theme_foundation(base_size=base_size, base_family=base_family)
+       + theme(plot.title = element_text(face = "bold",
+                                         size = rel(1.2), hjust = 0.5),
+               text = element_text(),
+               panel.background = element_rect(colour = NA),
+               plot.background = element_rect(colour = NA),
+               panel.border = element_rect(colour = NA),
+               axis.title = element_text(face = NULL ,size = rel(1)),
+               axis.title.y = element_text(angle=90,vjust =2),
+               axis.title.x = element_text(vjust = -0.2),
+               axis.text = element_text(), 
+               axis.line = element_line(colour="black"),
+               axis.ticks = element_line(),
+               panel.grid.major = element_line(colour="#f0f0f0"),
+               panel.grid.minor = element_blank(),
+               legend.key = element_rect(colour = NA),
+               legend.position = "top",
+               legend.direction = "horizontal",
+               legend.key.size= unit(0.2, "cm"),
+               legend.margin = unit(0, "cm"),
+               legend.title = element_text(face="italic"),
+               plot.margin=unit(c(10,5,5,5),"mm"),
+               strip.background=element_rect(colour="#f0f0f0",fill="#f0f0f0"),
+               strip.text = element_text(face="bold")
+          ))
+      
+}
+
+scale_colour_Publication_AM <- function(...){
+      library(scales)
+      discrete_scale("colour","Publication",manual_pal(values = c("#CD3900", "#4E6563")), ...)
+}
+```
+
+## Analyse
+
+```{r ATL_MED_variant_calling, echo=FALSE, include=FALSE}
+AF9 <- read.table(paste0(basePath,"/raw/AF9-T48-T60-T72_merge_aln_PysamStat_var_raw.txt"), header = TRUE, dec = ".", sep = "\t", stringsAsFactors=F)
+AF9 <- Variant_calling_pysamstats(AF9, 5, 180, 10)
+AF9_SNP <- complete_table_SNPs(AF9, AF9)
+create_vcf(paste0(basePath, "/raw/"),"AF9_SNP", AF9_SNP)
+write.table(AF9_SNP, file = paste0(basePath, "/raw/AF9_SNP_igv_alt3_DP180_sd-mean.txt"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+
+AF11 <- read.table(paste0(basePath,"/raw/AF11-T48-T60-T72_merge_aln_PysamStat_var_raw.txt"), header = TRUE, dec = ".", sep = "\t", stringsAsFactors=F)
+AF11 <- Variant_calling_pysamstats(AF11, 5, 180, 10)
+AF11_SNP <- complete_table_SNPs(AF11, AF11)
+create_vcf(paste0(basePath, "/raw/"),"AF11_SNP", AF11_SNP)
+write.table(AF11_SNP, file = paste0(basePath, "/raw/AF11_SNP_igv_alt3_DP180_sd-mean.txt"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+
+AF32 <- read.table(paste0(basePath,"/raw/AF32-T48-T60-T72_merge_aln_PysamStat_var_raw.txt"), header = TRUE, dec = ".", sep = "\t", stringsAsFactors=F)
+AF32 <- Variant_calling_pysamstats(AF32, 5, 180, 10)
+AF32_SNP <- complete_table_SNPs(AF32, AF32)
+create_vcf(paste0(basePath, "/raw/"),"AF32_SNP", AF32_SNP)
+write.table(AF32_SNP, file = paste0(basePath, "/raw/AF32_SNP_igv_alt3_DP180_sd-mean.txt"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+
+AF44 <- read.table(paste0(basePath,"/raw/AF44-T48-T60-T72_merge_aln_PysamStat_var_raw.txt"), header = TRUE, dec = ".", sep = "\t", stringsAsFactors=F)
+AF44 <- Variant_calling_pysamstats(AF44, 5, 180, 10)
+AF44_SNP <- complete_table_SNPs(AF44, AF44)
+create_vcf(paste0(basePath, "/raw/"),"AF44_SNP", AF44_SNP)
+write.table(AF44_SNP, file = paste0(basePath, "/raw/AF44_SNP_igv_alt3_DP180_sd-mean.txt"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+
+MF11 <- read.table(paste0(basePath,"/raw/MF11-T48-T60-T72_merge_aln_PysamStat_var_raw.txt"), header = TRUE, dec = ".", sep = "\t", stringsAsFactors=F)
+MF11 <- Variant_calling_pysamstats(MF11, 5, 180, 10)
+MF11_SNP <- complete_table_SNPs(MF11, MF11)
+create_vcf(paste0(basePath, "/raw/"),"MF11_SNP", MF11_SNP)
+write.table(MF11_SNP, file = paste0(basePath, "/raw/MF11_SNP_igv_alt3_DP180_sd-mean.txt"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+
+MF32 <- read.table(paste0(basePath,"/raw/MF32-T48-T60-T72_merge_aln_PysamStat_var_raw.txt"), header = TRUE, dec = ".", sep = "\t", stringsAsFactors=F)
+MF32 <- Variant_calling_pysamstats(MF32, 5, 180, 10)
+MF32_SNP <- complete_table_SNPs(MF32, MF32)
+create_vcf(paste0(basePath, "/raw/"),"MF32_SNP", MF32_SNP)
+write.table(MF32_SNP, file = paste0(basePath, "/raw/MF32_SNP_igv_alt3_DP180_sd-mean.txt"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+```
+
+```{r GFF3_file, warning = FALSE, message = FALSE, , echo=FALSE, include=FALSE}
+## Chargement d'un fichier gff3 dans R, necessite le package Ape ##
+gff_oshv <- read.gff(paste0(basePath,"/raw/oshv-1A-corr.gff3"), na.strings = c(".", "?"), GFF3 = TRUE) # package Ape
+gff_oshv_attribute <- data.frame(do.call(rbind, strsplit(gff_oshv$attributes, ";", fixed=TRUE)))
+genes_oshv <- data.frame(ORF=paste0(gff_oshv_attribute$X4,gff_oshv_attribute$X5), start=gff_oshv$start,end=gff_oshv$end)
+
+# Taille des ORFs en nucléotides
+genes_oshv$length_bp <- genes_oshv$end-genes_oshv$start+1
+
+rm(gff_oshv, gff_oshv_attribute)
+genes_oshv <- genes_oshv[-1,]
+genes_oshv$ORF <- gsub("gbkey=CDS", "", genes_oshv$ORF)
+genes_oshv$ORF <- gsub("product=", "", genes_oshv$ORF)
+genes_oshv$ORF <- gsub("ID=id\\d+", "_nf", genes_oshv$ORF) # changement par rapport au GG3 de ncbi, normalement "Note=nonfunctional""
+genes_oshv$ORF <- gsub(" ", "", genes_oshv$ORF)
+annot_OsHV <- read.table(paste0(basePath,"/raw/gene_oshv_ordered-OsHV-1.csv"), header = FALSE, dec = ".", sep = "\t", stringsAsFactors=F)
+colnames(annot_OsHV) <- c("ORF", "annotation")
+genes_oshv <- merge(genes_oshv,annot_OsHV)
+genes_oshv$annotation <- as.factor(genes_oshv$annotation)
+```
+
+```{r ATL_ensemble, echo=FALSE, include=FALSE}
+AF9_SNP <- AF9_SNP %>% 
+  select(chrom, pos, ref, ALT, DP, matches, DP_ALT) %>%
+  mutate(p_ALT = (DP_ALT / (matches+DP_ALT))*100) %>%
+  rename(CHROM = chrom, POS= pos, REF= ref, DP_AF9 = DP, MATCH_AF9 = matches, DP_ALT_AF9 = DP_ALT, p_ALT_AF9 = p_ALT)
+
+AF11_SNP <- AF11_SNP %>% 
+  select(chrom, pos, ref, ALT, DP, matches, DP_ALT) %>%
+  mutate(p_ALT = (DP_ALT / (matches+DP_ALT))*100) %>%
+  rename(CHROM = chrom, POS= pos, REF= ref, DP_AF11 = DP, MATCH_AF11 = matches, DP_ALT_AF11 = DP_ALT, p_ALT_AF11 = p_ALT)
+
+AF32_SNP <- AF32_SNP %>% 
+  select(chrom, pos, ref, ALT, DP, matches, DP_ALT) %>%
+  mutate(p_ALT = (DP_ALT / (matches+DP_ALT))*100) %>%
+  rename(CHROM = chrom, POS = pos, REF = ref, DP_AF32 = DP, MATCH_AF32 = matches, DP_ALT_AF32 = DP_ALT, p_ALT_AF32 = p_ALT)
+
+AF44_SNP <- AF44_SNP %>% 
+  select(chrom, pos, ref, ALT, DP, matches, DP_ALT) %>%
+  mutate(p_ALT = (DP_ALT / (matches+DP_ALT))*100) %>%
+  rename(CHROM = chrom, POS= pos, REF= ref, DP_AF44 = DP, MATCH_AF44 = matches, DP_ALT_AF44 = DP_ALT, p_ALT_AF44 = p_ALT)
+```
+
+```{r MED_ensemble, echo=FALSE, include=FALSE}
+MF11_SNP <- MF11_SNP %>% 
+  select(chrom, pos, ref, ALT, DP, matches, DP_ALT) %>%
+  mutate(p_ALT = (DP_ALT / (matches+DP_ALT))*100) %>%
+  rename(CHROM = chrom, POS= pos, REF= ref, DP_MF11 = DP, MATCH_MF11 = matches, DP_ALT_MF11 = DP_ALT, p_ALT_MF11 = p_ALT)
+
+MF32_SNP <- MF32_SNP %>% 
+  select(chrom, pos, ref, ALT, DP, matches, DP_ALT) %>%
+  mutate(p_ALT = (DP_ALT / (matches+DP_ALT))*100) %>%
+  rename(CHROM = chrom, POS= pos, REF= ref, DP_MF32 = DP, MATCH_MF32 = matches, DP_ALT_MF32 = DP_ALT, p_ALT_MF32 = p_ALT)
+```
+
+## Figures 4 ABC
+
+```{r Fig4ABC}
+list(AF9_SNP, AF11_SNP, AF32_SNP, AF44_SNP) %>% 
+  purrr::reduce(full_join)  %>%
+  as_tibble() %>%
+  replace(is.na(.), 0) %>%
+  select(DP_ALT_AF9, DP_ALT_AF11, DP_ALT_AF32, DP_ALT_AF44) %>%
+  rename(AF9 = DP_ALT_AF9, AF11 = DP_ALT_AF11, AF32 = DP_ALT_AF32, AF44 = DP_ALT_AF44) %>%
+  vennCounts() %>%
+  vennDiagram(circle.col = c("#333399","#CC3333", "#663399", "#FF6633"))
+
+Fig4B <- list(AF9_SNP, AF11_SNP, AF32_SNP, AF44_SNP) %>% 
+  reduce(inner_join)  %>%
+  as_tibble() %>%
+  replace(is.na(.), 0) %>%
+  select(POS, p_ALT_AF9, p_ALT_AF11, p_ALT_AF32, p_ALT_AF44) %>%
+  gather(NEI, FREQ, -POS) %>%
+  mutate(NEI = str_replace_all(NEI,"p_ALT_", "")) %>%
+  mutate(NEI = str_replace_all(NEI,"A", "")) %>%
+  ggplot(aes(x = FREQ, fill = NEI) ) +
+        geom_histogram(binwidth = 5,size = 2) +
+        labs(x = "Binned variant frequency",
+             y = "Variant count") +
+  geom_vline(xintercept = 25, linetype = "dotdash", size = 0.5, color = "#5C5C5C") +
+  geom_vline(xintercept = 75, linetype = "dotdash", size = 0.5, color = "#5C5C5C") +
+  scale_colour_manual(values = c("#CC3333", "#663399", "#FF6633", "#333399")) +
+  scale_fill_manual(values = c("#CC3333", "#663399", "#FF6633", "#333399")) + 
+  facet_wrap(~NEI, strip.position="right", nrow = 2, ncol = 2) +
+  theme_Publication()
+Fig4B
+
+
+list(AF9_SNP, AF11_SNP, AF32_SNP, AF44_SNP) %>% 
+  reduce(inner_join)  %>%
+  as_tibble() %>%
+  replace(is.na(.), 0) %>%
+  select(POS, p_ALT_AF9, p_ALT_AF11, p_ALT_AF32, p_ALT_AF44) %>%
+  gather(NEI, FREQ, -POS) %>%
+  mutate(NEI = str_replace_all(NEI,"p_ALT_", "")) %>%
+  mutate(NEI = str_replace_all(NEI,"A", "")) 
+
+
+TAG_FREQUENCE <- list(AF9_SNP, AF11_SNP, AF32_SNP, AF44_SNP) %>% 
+  reduce(inner_join)  %>%
+  as_tibble() %>%
+  replace(is.na(.), 0) %>%
+  dplyr::select(POS, p_ALT_AF9, p_ALT_AF11, p_ALT_AF32, p_ALT_AF44) %>%
+  dplyr::mutate(DIFF_9vs11 = abs(p_ALT_AF9 - p_ALT_AF11)) %>%
+  dplyr::mutate(SAME_FREQ_9vs11 = case_when(DIFF_9vs11 <= 5 ~ TRUE,
+                                      DIFF_9vs11 > 5 ~ FALSE)) %>%
+  dplyr::mutate(DIFF_9vs32 = abs(p_ALT_AF9 - p_ALT_AF32)) %>%
+  dplyr::mutate(SAME_FREQ_9vs32 = case_when(DIFF_9vs32 <= 5 ~ TRUE,
+                                      DIFF_9vs32 > 5 ~ FALSE)) %>%
+  dplyr::mutate(DIFF_9vs44 = abs(p_ALT_AF9 - p_ALT_AF44)) %>%
+  dplyr::mutate(SAME_FREQ_9vs44 = case_when(DIFF_9vs44 <= 5 ~ TRUE,
+                                      DIFF_9vs44 > 5 ~ FALSE)) %>%
+  dplyr::mutate(DIFF_11vs32 = abs(p_ALT_AF11 - p_ALT_AF32)) %>%
+  dplyr::mutate(SAME_FREQ_11vs32 = case_when(DIFF_11vs32 <= 5 ~ TRUE,
+                                      DIFF_11vs32 > 5 ~ FALSE)) %>%
+  dplyr::mutate(DIFF_11vs44 = abs(p_ALT_AF11 - p_ALT_AF44)) %>%
+  dplyr::mutate(SAME_FREQ_11vs44 = case_when(DIFF_11vs44 <= 5 ~ TRUE,
+                                      DIFF_11vs44 > 5 ~ FALSE)) %>%
+  dplyr::mutate(DIFF_32vs44 = abs(p_ALT_AF32 - p_ALT_AF44)) %>%
+  dplyr::mutate(SAME_FREQ_32vs44 = case_when(DIFF_32vs44 <= 5 ~ TRUE,
+                                      DIFF_32vs44 > 5 ~ FALSE)) %>%
+  dplyr::select(-p_ALT_AF9, -p_ALT_AF11, -p_ALT_AF32, -p_ALT_AF44) %>%
+  dplyr::mutate(CONSERVE_FREQ = case_when(DIFF_9vs11 >=5 | DIFF_9vs32 >=5 | DIFF_9vs44 >=5 | DIFF_11vs32 >=5 | DIFF_11vs44 >=5 | DIFF_32vs44 >=5 ~ "NO",
+                                          TRUE ~ "YES") ) %>%
+  dplyr::select(POS, CONSERVE_FREQ)
+  
+# Visu avec les position en x
+list(AF9_SNP, AF11_SNP, AF32_SNP, AF44_SNP) %>% 
+  reduce(inner_join)  %>%
+  as_tibble() %>%
+  replace(is.na(.), 0) %>%
+  select(POS, p_ALT_AF9, p_ALT_AF11, p_ALT_AF32, p_ALT_AF44) %>%
+  left_join(., TAG_FREQUENCE) %>%
+  gather(NEI, FREQ, -POS, -CONSERVE_FREQ) %>%
+  mutate(NEI = str_replace_all(NEI,"p_ALT_", "")) %>%
+  mutate(NEI = str_replace_all(NEI,"A", "")) %>%
+  ggplot(aes(x = POS,y = FREQ, color = CONSERVE_FREQ, res = 300) ) +
+  geom_point(aes(colour=CONSERVE_FREQ, fill = CONSERVE_FREQ), shape = 21, colour = "black", size = 3, alpha = 0.5) +
+        labs(x = "Genome position (bp)",
+             y = "Variant frequency (%)") +
+      scale_fill_manual(values=c("black", "white")) +
+  facet_wrap(~NEI, strip.position="right", nrow = 4, ncol = 1) +
+  xlim(0, 204886) + # permet d'avoir la bonne taille du génome de OsHV1 µVar A
+  geom_hline(yintercept = 25, linetype = "dotdash", size = 0.5, color = "#5C5C5C") +
+  geom_hline(yintercept = 75, linetype = "dotdash", size = 0.5, color = "#5C5C5C") +
+  theme_Publication()
+
+# Visu du papier changement le 2019-12-06
+Fig4C <- list(AF9_SNP, AF11_SNP, AF32_SNP, AF44_SNP) %>% 
+  reduce(inner_join)  %>%
+  as_tibble() %>%
+  replace(is.na(.), 0) %>%
+  select(POS, p_ALT_AF9, p_ALT_AF11, p_ALT_AF32, p_ALT_AF44) %>%
+  left_join(., TAG_FREQUENCE) %>%
+  mutate(rank = row_number(desc(p_ALT_AF11))) %>%
+  gather(NEI, FREQ, -POS, -CONSERVE_FREQ, -rank) %>%
+  mutate(NEI = str_replace_all(NEI,"p_ALT_", "")) %>%
+  mutate(NEI = str_replace_all(NEI,"A", "")) %>%
+  ggplot(aes(x = rank, y = FREQ, color = CONSERVE_FREQ, res = 300) ) +
+  geom_point(aes(colour=CONSERVE_FREQ, fill = CONSERVE_FREQ), shape = 21, colour = "black", size = 2, alpha = 0.5) +
+        labs(x = "Ranked freq",
+             y = "Variant frequency (%)") +
+      scale_fill_manual(values=c("black", "white")) +
+  facet_wrap(~NEI, strip.position="right", nrow = 4, ncol = 1) +
+  # xlim(0, 204886) + # permet d'avoir la bonne taille du génome de OsHV1 µVar A
+  geom_hline(yintercept = 25, linetype = "dotdash", size = 0.5, color = "#5C5C5C") +
+  geom_hline(yintercept = 75, linetype = "dotdash", size = 0.5, color = "#5C5C5C") +
+  theme_Publication()
+Fig4C
+```
+
+## Figure 5 ABC
+
+```{r Fig5ABC}
+list(MF11_SNP, MF32_SNP) %>% 
+  reduce(full_join)  %>%
+  as_tibble() %>%
+  replace(is.na(.), 0) %>%
+  select(DP_ALT_MF11, DP_ALT_MF32) %>%
+  rename(MF11 = DP_ALT_MF11, MF32 = DP_ALT_MF32) %>%
+  vennCounts() %>%
+  vennDiagram(circle.col = c("#CC3333", "#663399"))
+
+Fig5B <- list(MF11_SNP, MF32_SNP) %>% 
+  reduce(inner_join)  %>%
+  as_tibble() %>%
+  replace(is.na(.), 0) %>%
+  select(POS, p_ALT_MF11, p_ALT_MF32) %>%
+  gather(NEI, FREQ, -POS) %>%
+  mutate(NEI = str_replace_all(NEI,"p_ALT_", "")) %>%
+  mutate(NEI = str_replace_all(NEI,"M", "")) %>%
+  ggplot(aes(x = FREQ, fill = NEI) ) +
+        geom_histogram(binwidth = 5,size = 2) +
+        labs(x = "Binned variant frequency",
+             y = "Variant count") +
+  geom_vline(xintercept = 25, linetype = "dotdash", size = 0.5, color = "#5C5C5C") +
+  geom_vline(xintercept = 75, linetype = "dotdash", size = 0.5, color = "#5C5C5C") +
+  scale_colour_manual(values = c("#CC3333","#663399")) +
+  scale_fill_manual(values = c("#CC3333","#663399")) + 
+  facet_wrap(~NEI, strip.position="right", nrow = 1, ncol = 2) +
+  theme_Publication()
+Fig5B
+
+Fig5C <-list(MF11_SNP, MF32_SNP) %>% 
+  reduce(inner_join)  %>%
+  as_tibble() %>%
+  replace(is.na(.), 0) %>%
+  dplyr::mutate(DIFF = abs(p_ALT_MF11 - p_ALT_MF32)) %>%
+  dplyr::mutate(SAME_FREQ = case_when(DIFF <= 5 ~ TRUE,
+                                      DIFF > 5 ~ FALSE)) %>%
+  select(POS, p_ALT_MF11, p_ALT_MF32, SAME_FREQ) %>%
+  mutate(rank = row_number(desc(p_ALT_MF11))) %>% # Changement pour ordonner les freq et pas faire par pos
+  gather(NEI, FREQ, -POS, -SAME_FREQ, -rank) %>%
+  mutate(NEI = str_replace_all(NEI,"p_ALT_", "")) %>%
+  mutate(NEI = str_replace_all(NEI,"M", "")) %>%
+  ggplot(aes(x = rank, y = FREQ, color = SAME_FREQ, res = 300) ) +
+        geom_point(aes(colour=SAME_FREQ, fill = SAME_FREQ), shape = 21, colour = "black", size = 2, alpha = 0.5) +
+        labs(x = "Ranked freq",
+             y = "Variant frequency (%)") +
+      scale_fill_manual(values=c("black", "white")) +
+  facet_wrap(~NEI, strip.position="right", nrow = 2, ncol = 1) +
+  # xlim(0, 204886) + # permet d'avoir la bonne taille du génome de OsHV1 µVar A
+  geom_hline(yintercept = 25, linetype = "dotdash", size = 0.5, color = "#5C5C5C") +
+  geom_hline(yintercept = 75, linetype = "dotdash", size = 0.5, color = "#5C5C5C") +
+  theme_Publication()
+Fig5C
+```

@@ -1,0 +1,12 @@
+ORF	ANNOTATION_ORF	NEI	EFFECT	POS	NEI_ATL	p_ALT_ATL	NEI_MED	p_ALT_MED
+ORF83	secreted	Atlantic	stop_gained	126371	ATL	12.1821164889254	0	0
+ORF105.1_nf	unknown	Atlantic	stop_gained	158419	ATL	39.6346306592534	0	0
+ORFIN.4	transmembrane glycoprotein, 1 helix	Atlantic	stop_lost	61728	ATL	11.3997113997114	0	0
+ORFIN.4	transmembrane glycoprotein, 1 helix	Atlantic	stop_lost	61729	ATL	12.3993558776167	0	0
+ORF54	transmembrane glycoprotein, 1 helix	Atlantic	stop_lost	82714	ATL	25.3588516746412	0	0
+ORF54	transmembrane glycoprotein, 1 helix	Atlantic	stop_lost	82715	ATL	26.2019230769231	0	0
+ORF91	unknown	Common	start_lost	135011	ATL	30.3543913713405	MED	33.1578947368421
+ORF91	unknown	Common	start_lost	135012	ATL	32.1483771251932	MED	35.1063829787234
+ORF110	unknown	Atlantic	stop_lost	168039	ATL	13.8364779874214	0	0
+ORF114	unknown	Atlantic	stop_gained	171530	ATL	84.6325167037862	0	0
+ORF16	membrane protein	Mediterranean	stop_gained	21917	0	0	MED	76.0879523591388

@@ -1,0 +1,379 @@
+POS	REF	ALT	ANN[0].EFFECT	ANN[*].HGVS
+0	REF	ALT		
+11766	G	A	synonymous_variant	p.Thr1023Thr					
+13410	T	C	missense_variant	p.Lys567Glu					
+13556	C	T	missense_variant	p.Ser518Asn				
+16188	G	A	missense_variant	p.Arg274Lys								
+17325	T	C	missense_variant	p.Ile222Thr									
+18953	A	G	missense_variant	p.Lys96Glu										
+21404	G	A	missense_variant	p.Arg101Gln										
+21892	T	A	missense_variant	p.His22Gln										
+22357	C	T	synonymous_variant	p.Phe49Phe										
+22428	C	T	missense_variant	p.Ser73Leu										
+22736	C	T	missense_variant	p.Pro43Ser										
+23337	G	C	missense_variant	p.Ser270Cys										
+23776	A	C	missense_variant	p.Ser124Ala									
+24345	G	A	synonymous_variant	p.Ile540Ile									
+24399	G	A	synonymous_variant	p.Asp522Asp									
+25640	T	C	missense_variant	p.Lys109Glu								
+26274	T	C	missense_variant	p.Ser906Gly							
+27002	G	A	missense_variant	p.Ser663Leu						
+27020	C	T	missense_variant	p.Gly657Asp						
+27499	A	T	missense_variant	p.Asp497Glu					
+29343	G	T	missense_variant	p.Val64Leu			
+34741	A	T	synonymous_variant	p.Pro1087Pro			
+34991	T	C	missense_variant	p.Lys1004Arg			
+37331	T	A	missense_variant	p.Asn224Ile						
+39274	C	T	upstream_gene_variant	
+39276	C	T	upstream_gene_variant	
+39277	A	T	upstream_gene_variant	
+39278	A	T	upstream_gene_variant	
+39279	A	T	upstream_gene_variant	
+39333	C	T	missense_variant	p.Arg216Lys					
+42530	T	A	synonymous_variant	p.Leu747Leu								
+42635	T	C	synonymous_variant	p.Arg712Arg								
+43565	C	T	synonymous_variant	p.Ala402Ala							
+43573	C	T	missense_variant	p.Asp400Asn							
+43607	T	C	synonymous_variant	p.Ala388Ala							
+43735	C	T	missense_variant	p.Asp346Asn							
+44927	C	T	missense_variant	p.Glu47Lys							
+45533	C	G	missense_variant	p.Gly128Arg								
+46366	C	T	missense_variant	p.Glu54Lys								
+47348	C	T	upstream_gene_variant	
+47613	G	A	upstream_gene_variant	
+48888	A	T	upstream_gene_variant	
+51587	C	T	missense_variant	p.Met174Ile						
+56584	G	A	missense_variant	p.Asp866Asn								
+58383	C	T	synonymous_variant	p.Phe75Phe									
+59855	T	C	upstream_gene_variant	
+60202	T	G	upstream_gene_variant	
+60547	G	A	missense_variant	p.Glu99Lys										
+60665	C	T	missense_variant	p.Ser138Phe										
+61244	T	A	missense_variant	p.Phe166Ile										
+61920	C	T	missense_variant	p.Glu271Lys									
+62193	G	A	synonymous_variant	p.Leu180Leu									
+62326	A	G	synonymous_variant	p.Phe135Phe									
+63339	G	A	missense_variant	p.Val156Ile								
+65339	G	T	missense_variant	p.Lys310Asn						
+65768	A	T	missense_variant	p.Lys453Asn					
+65894	G	A	synonymous_variant	p.Val495Val					
+66735	A	G	missense_variant	p.Thr776Ala				
+66759	G	A	missense_variant	p.Glu784Lys				
+67860	G	A	missense_variant	p.Asp1151Asn			
+70758	G	A	synonymous_variant	p.Val635Val		
+71502	C	T	synonymous_variant	p.Phe883Phe		
+72086	T	C	missense_variant	p.Ile1078Thr		
+72119	A	G	missense_variant	p.Lys1089Arg		
+73172	G	A	upstream_gene_variant	
+74556	C	T	upstream_gene_variant	
+75589	G	A	synonymous_variant	p.Ile785Ile				
+79478	G	A	missense_variant	p.Glu265Lys						
+80895	A	G	missense_variant	p.Ser202Gly							
+81056	G	A	synonymous_variant	p.Arg255Arg							
+81275	C	T	synonymous_variant	p.Tyr328Tyr							
+81579	C	T	synonymous_variant	p.Leu430Leu							
+82296	G	A	missense_variant	p.Asp669Asn								
+83493	G	A	synonymous_variant	p.Leu3Leu							
+83606	T	C	missense_variant	p.Phe41Ser						
+83836	G	A	missense_variant	p.Asp118Asn						
+86440	G	A	synonymous_variant	p.Arg454Arg						
+87399	T	G	synonymous_variant	p.Thr221Thr							
+87730	G	A	missense_variant	p.Asp332Asn						
+90431	T	C	synonymous_variant	p.Ser279Ser				
+90848	C	T	synonymous_variant	p.Lys140Lys				
+90894	A	C	missense_variant	p.Val125Gly				
+93342	G	A	upstream_gene_variant	
+93876	C	T	missense_variant	p.Asp308Asn				
+95619	G	C	upstream_gene_variant	
+95690	G	A	upstream_gene_variant	
+95887	C	T	upstream_gene_variant	
+95975	C	T	upstream_gene_variant	
+96057	T	C	upstream_gene_variant	
+96561	T	C	upstream_gene_variant	
+97930	C	T	missense_variant	p.Asp803Asn				
+99658	G	A	missense_variant	p.His227Tyr			
+100091	T	A	missense_variant	p.Lys82Asn			
+103523	C	A	missense_variant	p.Asp394Tyr					
+105821	T	G	missense_variant	p.Asn114Thr					
+107116	C	T	missense_variant	p.Glu44Lys							
+109630	C	T	upstream_gene_variant	
+109868	G	A	upstream_gene_variant	
+109946	G	A	upstream_gene_variant	
+111866	C	T	missense_variant	p.Val204Ile						
+112119	C	T	synonymous_variant	p.Gln119Gln						
+115467	G	A	missense_variant	p.Arg3Gln				
+117243	A	G	missense_variant	p.Gln595Arg			
+119221	T	C	synonymous_variant	p.Gly1254Gly					
+120635	T	C	missense_variant	p.Phe443Ser						
+121853	C	A	missense_variant	p.Thr849Asn								
+121866	A	G	synonymous_variant	p.Pro853Pro								
+123002	C	T	synonymous_variant	p.Val75Val								
+123511	A	T	missense_variant	p.Tyr77Phe								
+123718	C	A	upstream_gene_variant	
+123720	T	A	upstream_gene_variant	
+123721	G	A	upstream_gene_variant	
+123724	T	A	upstream_gene_variant	
+125311	T	A	upstream_gene_variant	
+125313	T	A	upstream_gene_variant	
+125584	C	T	missense_variant	p.Ala285Thr										
+126371	A	T	stop_gained	p.Tyr22*										
+128375	G	A	missense_variant	p.Asp525Asn										
+129217	G	A	splice_region_variant&stop_retained_variant	p.Ter136Ter										
+130527	G	A	synonymous_variant	p.Gln230Gln									
+130979	T	G	missense_variant	p.Val381Gly										
+130997	C	T	missense_variant	p.Thr387Met										
+132809	C	T	missense_variant	p.Ser225Leu									
+132851	C	T	missense_variant	p.Thr239Ile									
+132853	G	T	missense_variant	p.Ala240Ser									
+132854	C	T	missense_variant	p.Ala240Val									
+132855	A	T	synonymous_variant	p.Ala240Ala									
+132858	G	T	missense_variant	p.Leu241Phe									
+133396	C	T	synonymous_variant	p.Ala140Ala										
+134615	A	G	synonymous_variant	p.Ile133Ile									
+135878	A	G	missense_variant	p.Trp342Arg									
+135926	C	T	missense_variant	p.Asp326Asn										
+137509	G	T	missense_variant	p.Ala202Ser									
+138092	A	C	missense_variant	p.Asn20Thr									
+138465	G	A	synonymous_variant	p.Leu144Leu									
+141655	C	T	synonymous_variant	p.Tyr258Tyr							
+142394	G	A	missense_variant	p.Glu505Lys						
+142399	C	T	synonymous_variant	p.Asp506Asp						
+142454	G	A	missense_variant	p.Asp525Asn						
+144062	T	C	upstream_gene_variant	
+144575	T	C	missense_variant	p.Phe109Leu				
+144697	A	G	synonymous_variant	p.Gly149Gly				
+145486	G	A	synonymous_variant	p.Leu412Leu			
+145675	C	A	synonymous_variant	p.Leu475Leu				
+148939	C	T	synonymous_variant	p.Val1563Val			
+149144	G	A	missense_variant	p.Asp1632Asn			
+149681	G	A	missense_variant	p.Glu1811Lys				
+150070	G	A	missense_variant	p.Glu33Lys				
+153070	G	A	missense_variant	p.Glu43Lys				
+153223	G	A	missense_variant	p.Gly94Arg				
+153224	G	A	missense_variant	p.Gly94Glu				
+153274	C	T	synonymous_variant	p.Leu111Leu				
+153848	C	T	missense_variant	p.Ser302Leu				
+155257	G	A	synonymous_variant	p.Arg298Arg				
+156372	C	T	missense_variant	p.Ser670Leu			
+157884	C	T	missense_variant	p.Ala1174Val				
+158149	T	G	upstream_gene_variant	
+158166	G	A	upstream_gene_variant	
+158300	G	A	upstream_gene_variant	
+158419	C	T	upstream_gene_variant	
+158559	T	G	upstream_gene_variant	
+159696	G	A	upstream_gene_variant	
+159887	G	A	synonymous_variant	p.Leu458Leu				
+160511	T	A	missense_variant	p.Glu250Asp				
+160649	C	T	synonymous_variant	p.Leu204Leu				
+162485	C	T	missense_variant	p.Pro368Ser					
+162840	G	A	missense_variant	p.Arg486Lys					
+163538	T	A	upstream_gene_variant	
+163540	T	A	upstream_gene_variant	
+163542	T	A	upstream_gene_variant	
+163543	G	A	upstream_gene_variant	
+163545	C	A	upstream_gene_variant	
+163565	G	A	upstream_gene_variant	
+163616	A	G	upstream_gene_variant	
+163653	T	C	upstream_gene_variant	
+163823	G	A	missense_variant	p.Glu52Lys					
+164083	T	C	synonymous_variant	p.Asp138Asp					
+164399	G	A	missense_variant	p.Glu244Lys						
+166278	T	G	missense_variant	p.Leu582Val						
+166295	C	T	synonymous_variant	p.Phe587Phe						
+166472	G	A	synonymous_variant	p.Leu646Leu						
+166634	G	A	synonymous_variant	p.Thr700Thr							
+167151	C	T	missense_variant	p.Arg873Cys							
+167296	G	A	missense_variant	p.Val15Ile							
+168846	G	A	missense_variant	p.Ser51Leu						
+168853	C	T	missense_variant	p.Glu49Lys						
+169597	C	T	synonymous_variant	p.Ile159Ile						
+169611	C	T	missense_variant	p.Ala164Val						
+169793	C	A	missense_variant	p.Leu225Met						
+171121	G	A	synonymous_variant	p.Leu202Leu						
+190718	C	T	missense_variant	p.Met207Ile						
+190727	G	A	synonymous_variant	p.Val204Val						
+192504	T	C	missense_variant	p.Lys288Glu						
+193057	G	A	synonymous_variant	p.Val103Val						
+193236	C	T	missense_variant	p.Glu44Lys						
+193307	G	A	missense_variant	p.Ser20Phe						
+193308	A	T	missense_variant	p.Ser20Thr						
+193316	T	G	missense_variant	p.His17Pro						
+193317	G	C	missense_variant	p.His17Asp						
+9784	G	A	missense_variant	p.Glu363Lys			
+12391	C	T	synonymous_variant	p.Leu284Leu					
+19641	C	A	upstream_gene_variant	
+20748	A	G	missense_variant	p.Asn193Asp										
+20768	G	A	upstream_gene_variant	
+21392	A	G	missense_variant	p.Glu97Gly											
+22488	C	T	missense_variant	p.Ser93Leu										
+22914	T	A	upstream_gene_variant	
+22917	T	A	upstream_gene_variant	
+22918	T	A	upstream_gene_variant	
+22919	C	A	upstream_gene_variant	
+22921	T	A	upstream_gene_variant	
+22923	T	A	upstream_gene_variant	
+22924	C	A	upstream_gene_variant	
+22929	A	T	upstream_gene_variant	
+24098	A	T	synonymous_variant	p.Ile16Ile									
+24099	A	T	missense_variant	p.Ile16Asn									
+24101	G	T	missense_variant	p.Ser15Arg									
+24102	C	T	missense_variant	p.Ser15Asn									
+27903	C	T	missense_variant	p.Glu363Lys			
+27905	C	T	missense_variant	p.Gly362Glu			
+38035	G	T	upstream_gene_variant	
+38036	C	T	upstream_gene_variant	
+39273	A	T	upstream_gene_variant	
+41229	G	T	upstream_gene_variant	
+41230	A	T	upstream_gene_variant	
+41232	A	T	upstream_gene_variant	
+41234	C	T	upstream_gene_variant	
+41235	A	T	upstream_gene_variant	
+41236	A	T	upstream_gene_variant	
+42154	G	T	upstream_gene_variant	
+46651	A	G	upstream_gene_variant	
+46730	G	C	upstream_gene_variant	
+46732	T	G	upstream_gene_variant	
+46733	T	G	upstream_gene_variant	
+46734	A	G	upstream_gene_variant	
+46735	T	G	upstream_gene_variant	
+46737	A	T	upstream_gene_variant	
+46739	C	G	upstream_gene_variant	
+48882	C	T	upstream_gene_variant	
+48884	G	T	upstream_gene_variant	
+48885	G	T	upstream_gene_variant	
+59312	C	T	missense_variant	p.Ser162Phe									
+59477	T	C	synonymous_variant	p.Thr43Thr										
+59974	C	T	upstream_gene_variant	
+61725	C	T	missense_variant	p.Ser326Leu										
+61726	A	T	synonymous_variant	p.Ser326Ser										
+61728	G	T	stop_lost&splice_region_variant	p.Ter327Leuext*?										
+61729	A	T	stop_lost&splice_region_variant	p.Ter327Cysext*?										
+61730	A	T	upstream_gene_variant	
+61798	T	G	upstream_gene_variant	
+63684	T	A	upstream_gene_variant	
+63686	C	A	upstream_gene_variant	
+63687	T	A	upstream_gene_variant	
+63688	T	A	upstream_gene_variant	
+63689	G	A	upstream_gene_variant	
+63690	C	A	upstream_gene_variant	
+63691	T	A	upstream_gene_variant	
+63693	T	A	upstream_gene_variant	
+64413	G	A	missense_variant	p.Glu2Lys							
+64426	T	C	missense_variant	p.Val6Ala							
+64895	G	A	synonymous_variant	p.Lys162Lys						
+64955	A	G	synonymous_variant	p.Glu182Glu						
+65600	T	C	synonymous_variant	p.Thr397Thr						
+68836	A	C	upstream_gene_variant	
+70916	C	T	missense_variant	p.Ala688Val		
+71384	G	A	missense_variant	p.Gly844Glu		
+73434	C	T	upstream_gene_variant	
+80297	T	A	missense_variant	p.Asn2Lys							
+80299	C	A	missense_variant	p.Thr3Lys							
+80301	G	A	missense_variant	p.Val4Ile							
+80302	T	A	missense_variant	p.Val4Asp							
+82714	G	T	stop_lost&splice_region_variant	p.Ter808Leuext*?								
+82715	A	T	stop_lost&splice_region_variant	p.Ter808Cysext*?								
+85043	T	A	upstream_gene_variant	
+85044	C	A	upstream_gene_variant	
+87319	G	A	missense_variant	p.Glu195Lys							
+91435	C	T	upstream_gene_variant	
+92018	G	A	missense_variant	p.Glu192Lys				
+93597	C	T	upstream_gene_variant	
+93598	C	T	upstream_gene_variant	
+94225	C	T	synonymous_variant	p.Ser191Ser				
+94839	A	T	upstream_gene_variant	
+94840	C	T	upstream_gene_variant	
+94841	A	T	upstream_gene_variant	
+94842	G	T	upstream_gene_variant	
+94843	A	T	upstream_gene_variant	
+94845	A	T	upstream_gene_variant	
+100641	C	T	upstream_gene_variant	
+100770	C	A	missense_variant	p.Asn7Lys			
+101031	C	T	synonymous_variant	p.Ile94Ile			
+101160	C	T	synonymous_variant	p.Val137Val			
+102592	G	T	upstream_gene_variant	
+102594	A	T	upstream_gene_variant	
+102596	A	T	upstream_gene_variant	
+106162	G	T	upstream_gene_variant	
+106163	A	T	upstream_gene_variant	
+106166	A	T	upstream_gene_variant	
+106168	G	T	upstream_gene_variant	
+106628	T	G	upstream_gene_variant	
+109411	C	A	upstream_gene_variant	
+109413	T	A	upstream_gene_variant	
+111302	A	T	upstream_gene_variant	
+111304	A	T	upstream_gene_variant	
+111306	A	T	upstream_gene_variant	
+111314	T	A	upstream_gene_variant	
+111316	C	A	upstream_gene_variant	
+111710	G	T	upstream_gene_variant	
+113019	G	A	upstream_gene_variant	
+113322	G	A	missense_variant	p.Arg6Gln					
+114025	T	A	missense_variant	p.Asn240Lys				
+120830	G	T	missense_variant	p.Gly508Val						
+123725	C	A	upstream_gene_variant	
+125255	A	T	upstream_gene_variant	
+125257	A	T	upstream_gene_variant	
+125258	A	T	upstream_gene_variant	
+125316	T	A	upstream_gene_variant	
+125317	T	A	upstream_gene_variant	
+126366	A	T	missense_variant	p.Met24Lys										
+126368	A	T	synonymous_variant	p.Thr23Thr										
+126369	G	T	missense_variant	p.Thr23Asn										
+126373	A	T	missense_variant	p.Tyr22Asn										
+126374	C	T	synonymous_variant	p.Lys21Lys										
+129781	C	A	upstream_gene_variant	
+129782	T	A	upstream_gene_variant	
+129785	T	A	upstream_gene_variant	
+129786	C	A	upstream_gene_variant	
+132087	C	A	upstream_gene_variant	
+132088	T	A	upstream_gene_variant	
+132089	T	A	upstream_gene_variant	
+132090	G	A	upstream_gene_variant	
+132093	T	A	upstream_gene_variant	
+132861	A	G	synonymous_variant	p.Leu242Leu									
+133020	C	T	missense_variant	p.Glu266Lys									
+135010	C	T	missense_variant	p.Asp2Asn									
+135011	C	T	start_lost	p.Met1?									
+135012	A	T	start_lost	p.Met1?									
+135043	T	C	upstream_gene_variant	
+139786	A	T	upstream_gene_variant	
+142621	C	T	synonymous_variant	p.Phe580Phe						
+142928	G	T	upstream_gene_variant	
+142931	A	T	upstream_gene_variant	
+143915	T	G	upstream_gene_variant	
+150568	G	T	missense_variant	p.Asp199Tyr				
+150569	A	T	missense_variant	p.Asp199Val				
+150607	C	T	upstream_gene_variant	
+154293	T	A	upstream_gene_variant	
+158062	C	A	upstream_gene_variant	
+158065	C	A	upstream_gene_variant	
+158067	T	A	upstream_gene_variant	
+158068	T	A	upstream_gene_variant	
+163546	T	A	upstream_gene_variant	
+164503	T	A	upstream_gene_variant	
+164504	T	A	upstream_gene_variant	
+165071	T	C	synonymous_variant	p.Gly179Gly						
+168039	A	T	stop_lost&splice_region_variant	p.Ter262Cysext*?							
+168042	G	T	upstream_gene_variant	
+168044	A	T	upstream_gene_variant	
+168119	C	T	upstream_gene_variant	
+171494	G	A	synonymous_variant	p.Leu3Leu							
+171530	T	A	stop_gained	p.Tyr15*							
+171532	T	A	missense_variant	p.Ile16Lys							
+190366	A	G	upstream_gene_variant	
+190917	T	A	missense_variant	p.Tyr141Phe					
+191018	A	T	missense_variant	p.Asn107Lys					
+191881	A	T	upstream_gene_variant	
+191883	A	A		
+191884	A	T	upstream_gene_variant	
+191885	A	T	upstream_gene_variant	
+192075	T	C	missense_variant	p.Met431Val					
+19275	A	T	upstream_gene_variant	
+74171	C	T	upstream_gene_variant	
+96631	C	T	upstream_gene_variant	
+131902	G	A	missense_variant	p.Asp689Asn								
+15733	G	A	synonymous_variant	p.Glu122Glu							
+21123	G	A	synonymous_variant	p.Leu7Leu											
+40738	C	T	missense_variant	p.Pro238Ser							
+115875	C	T	missense_variant	p.Thr139Met				
