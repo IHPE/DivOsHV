@@ -10,10 +10,10 @@
 ## USAGE ##
 # qsub -v "reads1=*R1.fastq.gz,reads2=*R2.fastq.gz,id=AF11-I-T48-R1,genomefile=OsHV-1_strain_microVar_variant_A.fasta,gffFile=oshv-1A-corr.gff3" ~/variant-oshvRef.pbs
 
-## Activation des environnement ##
-#Chargement de conda
+## Environment activation ##
+# Adding conda executable to the path
 export PATH=$PATH:/appli/anaconda/2.7/bin # risque de changé avec /appli/anaconda/latest
-#Chargement de l'environnement avec les outils
+# Activate environment with needed tools
 source activate $DATAWORK/mon-env-bioinfo
 
 ## Execute script ##
@@ -32,7 +32,7 @@ sortbamfile=${bamfile%.bam}_sortBAM.bam
 vcffile=${sortbamfile%.bam}.vcf
 alnPysamstats=${ID}_aln_PysamStat_var.txt
 
-# Ajout pour les htseqcount
+# filename for htseq-count
 countfile=${ID}_count.csv
 
 # Created output directory
@@ -57,10 +57,9 @@ echo -e "vcffile : $vcffile " >> $logfile
 echo -e "genomefile : $genomefile " >> $logfile
 echo -e "pysamstats file : ${basefile}_aln_PysamStat_var.txt " >> $logfile
 
-# Adaptater trimming
+# Adaptater trimming with Trimmomatic
 if [ ! -f ${readsTrim1} ]
 then
-    # Run FastQC on the resulting datasets.
     if [ $reads2 == "" ]
         then
             echo -e "\n Trimming ${reads1}..." >> $logfile
@@ -89,10 +88,9 @@ else
     echo -e "\nSkipped Adapter trimming" >> $logfile
 fi
 
-# Reads quality control
+# Check quality control of reads with FastQC
 if [ ! -f ${readsTrim1%.fastq.gz}_fastqc.html ]
 then
-    # Run FastQC on the trimming reads
     if [ $reads2 == "" ]
         then
             echo -e "\nSecond quality controle on ${readsTrim1} (single ends)... \n" >> $logfile
@@ -135,10 +133,10 @@ else
     echo -e "\nSkipped alignment" >> $logfile
 fi
 
-# filtring and Sorting mapping quality
+# filtering and Sorting mapping quality
 if [ ! -f ${sortbamfile} ] && [ ! -f ${sortbamfile%.bam}_rm-dupl.bam ]
     then
-        echo -e "\nFiltre all reads with mapping quality below 20" >> $logfile
+        echo -e "\nFilter all reads with mapping quality below 20" >> $logfile
         samtools view -bq 20 -m 20 ${bamfile} > ${bamfile%.bam}_q_20.bam \
         2>>${logfile}
         echo -e "\nSorting ${bamfile} ...\n" >> $logfile
@@ -152,16 +150,16 @@ if [ ! -f ${sortbamfile} ] && [ ! -f ${sortbamfile%.bam}_rm-dupl.bam ]
         else
             echo -e "\nSkipped indexing" >> $logfile
         fi
-        echo -e "\nFLAGSTAT after mapQ " >> $logfile
+        echo -e "\nFLAGSTAT after alignment " >> $logfile
         samtools flagstat $sortbamfile >> $logfile
 else
     echo -e "\nGenerated bam with mapping quality 20 already done" >> $logfile
 fi
 
-# remove duplicate
+# remove duplicate reads
 if [ ! -f ${sortbamfile%.bam}_rm-dupl.bam ]
     then
-        echo -e "\nRemoving duplicat ${sortbamfile%.bam}_rm-duplicat.bam ...\n" \
+        echo -e "\nRemoving duplicates ${sortbamfile%.bam}_rm-dupl.bam ...\n" \
         >> $logfile
         /home1/datawork/jdelmott/mon-env-bioinfo/bin/java -Xms512m -Xmx50g -jar \
         /home1/datawork/jdelmott/mon-env-bioinfo/share/picard-2.18.14-0/picard.jar \
@@ -177,7 +175,7 @@ if [ ! -f ${sortbamfile%.bam}_rm-dupl.bam ]
         ${sortbamfile%.bam}_rm-dupl.bam
         samtools index -b ${sortbamfile%.bam}_rm-dupl.bam 2>> ${logfile}
 else
-    echo -e "\nSkipped Removing duplicat" >> $logfile
+    echo -e "\nSkipped Removing duplicates" >> $logfile
 fi
 
 MarkDuplicates \
