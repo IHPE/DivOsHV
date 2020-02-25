@@ -30,12 +30,10 @@ logfile=${basefile}_log.txt
 bamfile=${basefile}_aligned.bam
 sortbamfile=${bamfile%.bam}_sortBAM.bam
 vcffile=${sortbamfile%.bam}.vcf
-#genomefile=$DATAWORK/data_jean/OsHV-1_strain_microVar_variant_A.fasta
 alnPysamstats=${ID}_aln_PysamStat_var.txt
 
 # Ajout pour les htseqcount
 countfile=${ID}_count.csv
-#gffFile=$DATAWORK/data_jean/oshv-1A-corr.gff3
 
 # Created output directory
 if [ ! -d "${ID}_Variant_calling" ];
@@ -160,29 +158,7 @@ else
     echo -e "\nGenerated bam with mapping quality 20 already done" >> $logfile
 fi
 
-## remove duplicate | Waring syntax old version !
-#if [ ! -f ${sortbamfile%.bam}_rm-dupl.bam ]
-#    then
-#        echo -e "\nRemoving duplicat ${sortbamfile%.bam}_rm-duplicat.bam ...\n" \
-#        >> $logfile
-#        /home1/datawork/jdelmott/mon-env-bioinfo/bin/java -Xms512m -Xmx50g -jar \
-#        /home1/datawork/jdelmott/mon-env-bioinfo/share/picard-2.18.14-0/picard.jar \
-#         MarkDuplicates \
-#         "I=${sortbamfile}" \
-#         "O=${sortbamfile%.bam}_rm-dupl.bam" \
-#         "M=${sortbamfile%.bam}_MD_metrics.txt" \
-#         "VALIDATION_STRINGENCY=LENIENT" \
-#         "REMOVE_DUPLICATES=true" \
-#          2>> ${logfile}
-#        samtools sort -T ${sortbamfile%.bam}_rm-dupl.bam \
-#        -o ${sortbamfile%.bam}_rm-dupl.bam \
-#        ${sortbamfile%.bam}_rm-dupl.bam
-#        samtools index -b ${sortbamfile%.bam}_rm-dupl.bam 2>> ${logfile}
-#else
-#    echo -e "\nSkipped Removing duplicat" >> $logfile
-#fi
-
-# remove duplicate | Waring syntax old version !
+# remove duplicate
 if [ ! -f ${sortbamfile%.bam}_rm-dupl.bam ]
     then
         echo -e "\nRemoving duplicat ${sortbamfile%.bam}_rm-duplicat.bam ...\n" \
@@ -224,11 +200,6 @@ if [ ! -f ${fileReads} ]
     then
       echo -e "\nCounting reads after Remove duplcates...\n" \
       >> $logfile
-      # ID
-      # total number of alignments on library
-      # reads non align
-      # reads align on virus
-      # alignments that are not unmapped after QC
       echo -e ${ID} "\t" \
       `samtools view -c $bamfile` \
       "\t" \
@@ -264,17 +235,6 @@ else
     echo -e "\n${countfile} already exist ..." >> $logfile
 fi
 
-## Variant calling Samtools (old)
-#if [ ! -f ${vcffile} ]
-#    then
-#        echo -e "\nStarted SNP calling of ${sortbamfile} ...\n" >> $logfile
-#        samtools mpileup -ABQ0 -d8000 -uf $genomefile ${sortbamfile%.bam}_rm-dupl.bam \
-#        | bcftools call -vm --threads $NCPUS --ploidy 1 -o $vcffile # The -m option is use for set all infividuals as haploid
-## Trying the -A option to display all the polymorphismes
-#else
-#    echo -e "\n${vcffile} already exist ..." >> $logfile
-#fi
-
 # Variant calling
 if [ ! -f ${vcffile%.vcf}_cQR.vcf.gz.tbi ] && [ ! -f ${ID}_ann.vcf ]
     then
@@ -287,7 +247,7 @@ if [ ! -f ${vcffile%.vcf}_cQR.vcf.gz.tbi ] && [ ! -f ${ID}_ann.vcf ]
     sed 's/=QR,Number=1,Type=Integer/=QR,Number=1,Type=Float/' ${vcffile} \
     > ${vcffile%.vcf}_cQR.vcf
     echo -e "\nChanging QR Type=Integer by Type=Float " >> $logfile
-    # compressions VCF
+    # compress VCF
     if [ ! -f ${vcffile%.vcf}_cQR.vcf.gz ]
         then
             echo -e "\n ${vcffile%.vcf}_cQR.vcf compress ...\n" >> $logfile
@@ -296,7 +256,7 @@ if [ ! -f ${vcffile%.vcf}_cQR.vcf.gz.tbi ] && [ ! -f ${ID}_ann.vcf ]
             echo -e "\n${vcffile%.vcf}_cQR.vcf already compress ..." \
             >> $logfile
     fi
-    # indexation VCF
+    # index VCF
     if [ ! -f ${vcffile%.vcf}_cQR.vcf.gz.tbi ]
         then
             echo -e "\n ${vcffile%.vcf}_cQR.vcf indexed ...\n" >> $logfile
@@ -307,19 +267,6 @@ if [ ! -f ${vcffile%.vcf}_cQR.vcf.gz.tbi ] && [ ! -f ${ID}_ann.vcf ]
 else
     echo -e "\n${vcffile} already exist ..." >> $logfile
 fi
-
-## Sort VCF
-#### Problem unsolved : [E::vcf_parse_format] Invalid character '.' in 'QR' FORMAT field at KY242785.1:34 ###
-#if [ ! -f ${vcffile%.vcf}_sorted.vcf.gz ] && [ ! -f ${ID}_ann.vcf ]
-#    then
-#        echo -e "\n ${vcffile} sorted ...\n" >> $logfile
-#        cat ${vcffile}.gz | vcf-sort > ${vcffile%.vcf}_sorted.vcf
-#        bgzip -c ${vcffile%.vcf}_sorted.vcf > ${vcffile%.vcf}_sorted.vcf.gz
-#        tabix -p vcf ${vcffile%.vcf}_sorted.vcf.gz
-#        #rm ${vcffile}.gz
-#else
-#    echo -e "\n${vcffile%.vcf}_sorted.vcf.gz already sorted ..." >> $logfile
-#fi
 
 # first QC
 if [ ! -f ${vcffile%.vcf}.check ]
@@ -371,32 +318,6 @@ else
         echo -e "\n${vcffile} already Multibreak ..." >> $logfile
 fi
 
-## filtred VCF
-#if [ ! -f ${vcffile%.vcf}_norma_filtred.vcf.gz ]
-#    then
-#        echo -e "\n ${vcffile%.vcf}_norma_filtred.vcf.gz sort using %QUAL>20 & MIN(DP)>20 \
-#        & (DP4[0]+DP4[1]+DP4[2]+DP4[3]) > 20 ...\n" >> $logfile
-#        bcftools filter -g10 -G10 -i'%QUAL>20 & MIN(DP)>20 & (DP4[0]+DP4[1]+DP4[2]+DP4[3]) > 20' \
-#        ${vcffile%.vcf}_norma.vcf.gz > ${vcffile%.vcf}_norma_filtred.vcf 2>> ${logfile}
-#        bgzip -c ${vcffile%.vcf}_norma_filtred.vcf > ${vcffile%.vcf}_norma_filtred.vcf.gz
-#        tabix -p vcf ${vcffile%.vcf}_norma_filtred.vcf.gz
-#else
-#    echo -e "\n${vcffile} already filtred ..." >> $logfile
-#fi
-
-## Second QC
-#if [ ! -f ${vcffile%.vcf}_norma_filtred.check ]
-#    then
-#        echo -e "\n ${vcffile%.vcf}_norma_filtred.check ...\n" >> $logfile
-#        bcftools stats ${vcffile%.vcf}_norma_filtred.vcf.gz > ${vcffile%.vcf}_norma_filtred.check
-#        echo -e "$(basename $ID)\t $(basename $ID)\t $(basename $ID)\t $(basename $ID)" \
-#        > ${vcffile%.vcf}_summary_QC_second.txt
-#        grep -e "^SN" ${vcffile%.vcf}_norma_filtred.check >> ${vcffile%.vcf}_summary_QC_second.txt
-#        echo -e "\n - Use paste command for concat all second_QC files - " >> $logfile
-#    else
-#        echo -e "\n${vcffile} already second QC ..." >> $logfile
-#fi
-
 # Annotation of VCF using OsHV1 µVar A genome (gff3 modif)
 if [ ! -f ${ID}_ann.vcf ]
   then
@@ -421,23 +342,6 @@ if [ ! -f ${basefile}_ann.csv ]
 else
         echo -e "\n${ID}_ann_clean.csv table already generated ..." >> $logfile
 fi
-
-## Extraction of annotation wit SnpSift
-#if [ ! -f ${vcffile%.vcf}_ann_clean.vcf ]
-#  then
-#    echo -e "\n Extraction avec SnpSift...\n" >> $logfile
-#    SnpSift \
-#    extractFields ${vcffile%.vcf}_ann.vcf POS REF ALT "ANN[0].EFFECT" "ANN[*].HGVS" \
-#    > ${vcffile%.vcf}_ann_clean.vcf
-#else
-#fi
-
-## rm file for place
-#echo -e "\nDeleting ${sortbamfile}.bai ${sortbamfile} for space ...\n" \
-#        >> $logfile
-#rm $bamfile ${sortbamfile}.bai ${sortbamfile} ${vcffile%.vcf}_cQR_norma_decomp.vcf \
-#${vcffile%.vcf}_cQR_norma.vcf ${vcffile} ${vcffile%.vcf}_cQR.vcf \
-#${vcffile%.vcf}_cQR.vcf.gz ${vcffile%.vcf}_cQR.vcf.gz.tbi
 
 # Extraction of Tables
 if [ ! -f ${ID}_clean.csv ]
