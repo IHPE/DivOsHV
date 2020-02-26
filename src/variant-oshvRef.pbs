@@ -8,17 +8,15 @@
 # Variant calling on OsHV-1 µVar A
 
 ## USAGE ##
-# qsub -v "reads1=*R1.fastq.gz,reads2=*R2.fastq.gz,id=AF11-I-T48-R1,genomefile=OsHV-1_strain_microVar_variant_A.fasta,gffFile=oshv-1A-corr.gff3" ~/variant-oshvRef.pbs
+# qsub -v "reads1=*R1.fastq.gz,reads2=*R2.fastq.gz,id=AF11-I-T48-R1,genomefile=OsHV-1_strain_microVar_variant_A.fasta,gffFile=oshv-1A-corr.gff3,outdir=/output_dir" ~/variant-oshvRef.pbs
 
 ## Environment activation ##
-# Adding conda executable to the path
-export PATH=$PATH:/appli/anaconda/2.7/bin # risque de changé avec /appli/anaconda/latest
-# Activate environment with needed tools
-source activate $DATAWORK/mon-env-bioinfo
+export PATH=$PATH:/appli/anaconda/2.7/bin
+source activate /mon-env-bioinfo
 
 ## Execute script ##
 
-cd $SCRATCH/2020-01-29_VC_Annotated_genome_DiVir/ # be sure to creat repo before run script
+cd $outdir
 
 basefile=$(basename $reads1 .fastq.gz)
 basefileReads2=$(basename $reads2 .fastq.gz)
@@ -177,21 +175,6 @@ if [ ! -f ${sortbamfile%.bam}_rm-dupl.bam ]
 else
     echo -e "\nSkipped Removing duplicates" >> $logfile
 fi
-
-MarkDuplicates \
--I ${sortbamfile} \
--O ${sortbamfile%.bam}_rm-dupl.bam \
--M ${sortbamfile%.bam}_MD_metrics.txt \
--VALIDATION_STRINGENCY LENIENT \
--REMOVE_DUPLICATES true
-
-/home1/datawork/jdelmott/mon-env-bioinfo/bin/java -Xms512m -Xmx50g -jar \
-        /home1/datawork/jdelmott/mon-env-bioinfo/share/picard-2.18.14-0/picard.jar \
-         MarkDuplicates \
-        I="WGS_num-10_Thau-Inf-F32c_S13_mRNA_paired_R1_aligned_sortBAM.bam" \
-        O="WGS_num-10_Thau-Inf-F32c_S13_mRNA_paired_R1_aligned_sortBAM_rm-dupl.bam" \
-        REMOVE_DUPLICATES=true
-
 
 # Stat on the raw count of reads
 if [ ! -f ${fileReads} ]
