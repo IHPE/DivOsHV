@@ -65,7 +65,7 @@ then
             ${reads2} \
             ${readsTrim1} \
             $(basename $reads1 .fastq.gz)_1unpaired.fastq.gz \
-            ILLUMINACLIP:/home1/datahome/jdelmott/all_adapter.fa:2:30:10 \
+            ILLUMINACLIP:all_adapter.fa:2:30:10 \
             LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:50
             echo -e "Reads trim in : ${reads1%.fastq.gz}_trim.fastq.gz \n " >> $logfile
         else
@@ -77,7 +77,7 @@ then
             $(basename $reads1 .fastq.gz)_1unpaired.fastq.gz \
             ${readsTrim2} \
             $(basename $reads2 .fastq.gz)_2unpaired.fastq.gz \
-            ILLUMINACLIP:/home/datawork-hemovir/raw/data/all_adapter.fa:2:30:10 \
+            ILLUMINACLIP:all_adapter.fa:2:30:10 \
             LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:50
             echo -e "Reads1 trim in : ${readsTrim1} \n " >> $logfile
             echo -e "Reads2 trim in : ${readsTrim2} \n " >> $logfile
@@ -159,8 +159,8 @@ if [ ! -f ${sortbamfile%.bam}_rm-dupl.bam ]
     then
         echo -e "\nRemoving duplicates ${sortbamfile%.bam}_rm-dupl.bam ...\n" \
         >> $logfile
-        /home1/datawork/jdelmott/mon-env-bioinfo/bin/java -Xms512m -Xmx50g -jar \
-        /home1/datawork/jdelmott/mon-env-bioinfo/share/picard-2.18.14-0/picard.jar \
+        java -Xms512m -Xmx50g -jar \
+        picard-2.18.14-0/picard.jar \
          MarkDuplicates \
          "I=${sortbamfile}" \
          "O=${sortbamfile%.bam}_rm-dupl.bam" \
@@ -303,7 +303,7 @@ fi
 if [ ! -f ${ID}_ann.vcf ]
   then
     echo -e "\n Annotation of effects ...\n" >> $logfile
-    snpEff -c /home1/datawork/jdelmott/mon-env-bioinfo/share/snpeff-4.3.1t-2/snpEff.config \
+    snpEff -c snpEff.config \
       -v oshv-1A-corr  \
       -stats ${ID}_SnpEff_summary.html \
       ${vcffile%.vcf}_cQR_norma_decomp_multiB.vcf.gz \
